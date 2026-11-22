@@ -1,0 +1,566 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Core Primitives ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isVerifiedUser() && request.auth.uid == uid;
+    }
+
+    function isBootstrapAdmin() {
+      return isVerifiedUser() && request.auth.token.email == 'ramdeeksharam@gmail.com';
+    }
+
+    function isSuperAdmin() {
+      return isBootstrapAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/platformRoles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/platformRoles/$(request.auth.uid)).data.role == 'super_admin' &&
+        get(/databases/$(database)/documents/platformRoles/$(request.auth.uid)).data.status == 'Active'
+      );
+    }
+
+    function isAdmin() {
+      return isSuperAdmin() || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      ) || (
+        isVerifiedUser() &&
+        exists(/databases/$(database)/documents/platformRoles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/platformRoles/$(request.auth.uid)).data.role == 'admin' &&
+        get(/databases/$(database)/documents/platformRoles/$(request.auth.uid)).data.status == 'Active'
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidEmailStr(val) {
+      return val is string && val.size() >= 3 && val.size() <= 160;
+    }
+
+    function isValidMileageKm(val) {
+      return val is number && val >= 0 && val <= 2000000;
+    }
+
+    function isValidLatitude(val) {
+      return val is number && val >= -90 && val <= 90;
+    }
+
+    function isValidLongitude(val) {
+      return val is number && val >= -180 && val <= 180;
+    }
+
+    function isValidSpeedKmh(val) {
+      return val is number && val >= 0 && val <= 240;
+    }
+
+    function isValidHeadingDeg(val) {
+      return val is number && val >= 0 && val <= 360;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidAdminUser(data, uid) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.uid == uid &&
+        isValidEmailStr(data.email) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidPlatformRoleGrant(data, uid) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'status', 'assignedBy', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid',
+          'email',
+          'displayName',
+          'role',
+          'status',
+          'assignedBy',
+          'company',
+          'adminId',
+          'clientId',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.uid == uid &&
+        isValidEmailStr(data.email) &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120)) &&
+        data.role is string &&
+        data.role.size() <= 20 &&
+        data.role in ['super_admin', 'admin', 'client', 'customer'] &&
+        data.status is string &&
+        data.status.size() <= 16 &&
+        data.status in ['Active', 'Blocked'] &&
+        isValidId(data.assignedBy) &&
+        (!('company' in data) || (data.company is string && data.company.size() <= 120)) &&
+        (!('adminId' in data) || isValidId(data.adminId)) &&
+        (!('clientId' in data) || isValidId(data.clientId)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserWorkspace(data, uid) {
+      return data.keys().hasAll(['uid', 'displayName', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'company', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == uid &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100 &&
+        (!('company' in data) || (data.company is string && data.company.size() <= 120)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data, uid) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'phone', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == uid &&
+        isValidEmailStr(data.email) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidWishlist(data, uid) {
+      return data.keys().hasAll(['uid', 'productIds', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'productIds', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.uid == uid &&
+        data.productIds is list &&
+        data.productIds.size() <= 50 &&
+        (data.productIds.size() == 0 || (data.productIds[0] is string && data.productIds[0].size() <= 64)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAiSession(data, sessionId) {
+      return data.keys().hasAll(['sessionId', 'ownerId', 'title', 'model', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['sessionId', 'ownerId', 'title', 'model', 'createdAt', 'updatedAt']) &&
+        isValidId(data.sessionId) &&
+        data.sessionId == sessionId &&
+        isValidId(data.ownerId) &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+        data.model is string && data.model.size() >= 1 && data.model.size() <= 64 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAiMessage(data, sessionId, messageId) {
+      return data.keys().hasAll(['messageId', 'sessionId', 'ownerId', 'role', 'text', 'model', 'createdAt']) &&
+        data.keys().hasOnly(['messageId', 'sessionId', 'ownerId', 'role', 'text', 'model', 'createdAt']) &&
+        isValidId(data.messageId) &&
+        data.messageId == messageId &&
+        isValidId(data.sessionId) &&
+        data.sessionId == sessionId &&
+        isValidId(data.ownerId) &&
+        (data.role == 'user' || data.role == 'model') &&
+        data.text is string && data.text.size() >= 1 && data.text.size() <= 8000 &&
+        data.model is string && data.model.size() >= 1 && data.model.size() <= 64 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSavedMedia(data, mediaId) {
+      return data.keys().hasAll(['mediaId', 'ownerId', 'kind', 'title', 'prompt', 'createdAt']) &&
+        data.keys().hasOnly(['mediaId', 'ownerId', 'kind', 'title', 'prompt', 'summaryText', 'createdAt']) &&
+        isValidId(data.mediaId) &&
+        data.mediaId == mediaId &&
+        isValidId(data.ownerId) &&
+        (data.kind == 'image' || data.kind == 'video' || data.kind == 'transcript') &&
+        data.title is string && data.title.size() >= 1 && data.title.size() <= 160 &&
+        data.prompt is string && data.prompt.size() >= 1 && data.prompt.size() <= 2000 &&
+        (!('summaryText' in data) || (data.summaryText is string && data.summaryText.size() <= 8000)) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidVehicleDevice(data, deviceId) {
+      return data.keys().hasAll(['deviceId', 'ownerId', 'imei', 'nickname', 'vehicleType', 'model', 'status', 'simExpiry', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'deviceId',
+          'ownerId',
+          'imei',
+          'nickname',
+          'vehicleType',
+          'model',
+          'status',
+          'simExpiry',
+          'latitude',
+          'longitude',
+          'speedKmh',
+          'headingDeg',
+          'telemetrySource',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidId(data.deviceId) &&
+        data.deviceId == deviceId &&
+        isValidId(data.ownerId) &&
+        data.imei is string && data.imei.size() == 15 && data.imei.matches('^[0-9]{15}$') &&
+        data.nickname is string && data.nickname.size() >= 2 && data.nickname.size() <= 80 &&
+        data.vehicleType is string && data.vehicleType.size() >= 2 && data.vehicleType.size() <= 40 &&
+        data.vehicleType in [
+          'Commercial Truck / Fleet',
+          'Cargo Van / LCV',
+          'Passenger Car / SUV',
+          'Two-Wheeler / Scooter',
+          'Bus / Coach',
+          'Refrigerated Van',
+          'Tractor / Harvester'
+        ] &&
+        data.model is string && data.model.size() >= 2 && data.model.size() <= 80 &&
+        (data.status == 'Moving' || data.status == 'Idle' || data.status == 'Alert') &&
+        data.simExpiry is string && data.simExpiry.size() >= 4 && data.simExpiry.size() <= 20 &&
+        (!('latitude' in data) || isValidLatitude(data.latitude)) &&
+        (!('longitude' in data) || isValidLongitude(data.longitude)) &&
+        (!('speedKmh' in data) || isValidSpeedKmh(data.speedKmh)) &&
+        (!('headingDeg' in data) || isValidHeadingDeg(data.headingDeg)) &&
+        (!('telemetrySource' in data) || (
+          data.telemetrySource is string &&
+          data.telemetrySource.size() <= 16 &&
+          data.telemetrySource in ['gps', 'simulated', 'manual']
+        )) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidVehicleMaintenance(data, maintenanceId) {
+      return data.keys().hasAll([
+          'maintenanceId',
+          'ownerId',
+          'deviceId',
+          'imei',
+          'odometerKm',
+          'oilChangeLastKm',
+          'airFilterLastKm',
+          'fuelFilterLastKm',
+          'brakeCheckLastKm',
+          'transmissionLastKm',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'maintenanceId',
+          'ownerId',
+          'deviceId',
+          'imei',
+          'odometerKm',
+          'oilChangeLastKm',
+          'airFilterLastKm',
+          'fuelFilterLastKm',
+          'brakeCheckLastKm',
+          'transmissionLastKm',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidId(data.maintenanceId) &&
+        data.maintenanceId == maintenanceId &&
+        isValidId(data.ownerId) &&
+        isValidId(data.deviceId) &&
+        data.imei is string && data.imei.size() == 15 && data.imei.matches('^[0-9]{15}$') &&
+        isValidMileageKm(data.odometerKm) &&
+        isValidMileageKm(data.oilChangeLastKm) &&
+        isValidMileageKm(data.airFilterLastKm) &&
+        isValidMileageKm(data.fuelFilterLastKm) &&
+        isValidMileageKm(data.brakeCheckLastKm) &&
+        isValidMileageKm(data.transmissionLastKm) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // --- Collection Rules ---
+
+    // Boot connectivity check document (non-sensitive ping only)
+    match /test/connection {
+      allow get: if isSignedIn();
+      allow list, write: if false;
+    }
+
+    // Admin grant table
+    match /admins/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isAdmin() &&
+        isValidId(uid) &&
+        isValidAdminUser(incoming(), uid) &&
+        incoming().createdAt == request.time;
+      allow update: if isAdmin() &&
+        isValidId(uid) &&
+        isValidAdminUser(incoming(), uid) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['email']);
+      allow delete: if isAdmin() && isValidId(uid);
+    }
+
+    // Four-Tier RBAC Role Grants (Super Admin, Admin, Client, Customer)
+    match /platformRoles/{uid} {
+      allow get: if isValidId(uid) && (isOwner(uid) || isSuperAdmin());
+      allow list: if isSuperAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(uid) &&
+        isValidPlatformRoleGrant(incoming(), uid) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        incoming().assignedBy == request.auth.uid &&
+        (
+          (isBootstrapAdmin() && request.auth.uid == uid && incoming().role == 'super_admin' && incoming().status == 'Active') ||
+          (isOwner(uid) && incoming().role == 'customer' && incoming().status == 'Active') ||
+          isSuperAdmin()
+        );
+      allow update: if isVerifiedUser() &&
+        isValidId(uid) &&
+        isValidPlatformRoleGrant(incoming(), uid) &&
+        isSuperAdmin() &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().assignedBy == request.auth.uid &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'email',
+          'displayName',
+          'role',
+          'status',
+          'assignedBy',
+          'company',
+          'adminId',
+          'clientId',
+          'updatedAt'
+        ]);
+      allow delete: if isSuperAdmin() && isValidId(uid);
+    }
+
+    // User Workspace (Non-PII)
+    match /users/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(uid) || isAdmin()) &&
+        isValidId(uid) &&
+        isValidUserWorkspace(incoming(), uid) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if (isOwner(uid) || isAdmin()) &&
+        isValidId(uid) &&
+        isValidUserWorkspace(incoming(), uid) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'company', 'updatedAt'])
+        );
+      allow delete: if isAdmin() && isValidId(uid);
+
+      // Isolated PII Subcollection
+      match /private/{docId} {
+        allow get: if (isOwner(uid) || isAdmin()) && isValidId(docId);
+        allow list: if isOwner(uid) || isAdmin();
+        allow create: if (isOwner(uid) || isAdmin()) &&
+          isValidId(uid) &&
+          isValidId(docId) &&
+          isValidUserPrivateInfo(incoming(), uid) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if (isOwner(uid) || isAdmin()) &&
+          isValidId(uid) &&
+          isValidId(docId) &&
+          isValidUserPrivateInfo(incoming(), uid) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          (
+            isAdmin() ||
+            incoming().diff(existing()).affectedKeys().hasOnly(['email', 'phone', 'updatedAt'])
+          );
+        allow delete: if (isOwner(uid) || isAdmin()) && isValidId(docId);
+      }
+    }
+
+    // Hardware Wishlist
+    match /wishlists/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(uid) || isAdmin()) &&
+        isValidId(uid) &&
+        isValidWishlist(incoming(), uid) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if (isOwner(uid) || isAdmin()) &&
+        isValidId(uid) &&
+        isValidWishlist(incoming(), uid) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['productIds', 'updatedAt'])
+        );
+      allow delete: if (isOwner(uid) || isAdmin()) && isValidId(uid);
+    }
+
+    // AI Fleet Copilot Sessions
+    match /aiSessions/{sessionId} {
+      allow get: if isVerifiedUser() && isValidId(sessionId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(sessionId) &&
+        isValidAiSession(incoming(), sessionId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(sessionId) &&
+        isValidAiSession(incoming(), sessionId) &&
+        (existing().ownerId == request.auth.uid || isAdmin()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().sessionId == existing().sessionId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'model', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser() && isValidId(sessionId) && (existing().ownerId == request.auth.uid || isAdmin());
+
+      // Master Gate Subcollection: AI Session Messages
+      match /messages/{messageId} {
+        allow get: if isVerifiedUser() && isValidId(sessionId) && isValidId(messageId) && (
+          get(/databases/$(database)/documents/aiSessions/$(sessionId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+        allow list: if isVerifiedUser() && (existing().ownerId == request.auth.uid || isAdmin());
+        allow create: if isVerifiedUser() &&
+          isValidId(sessionId) &&
+          isValidId(messageId) &&
+          isValidAiMessage(incoming(), sessionId, messageId) &&
+          incoming().ownerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/aiSessions/$(sessionId)) &&
+          get(/databases/$(database)/documents/aiSessions/$(sessionId)).data.ownerId == request.auth.uid;
+        allow update: if false;
+        allow delete: if isVerifiedUser() && isValidId(sessionId) && isValidId(messageId) && (
+          get(/databases/$(database)/documents/aiSessions/$(sessionId)).data.ownerId == request.auth.uid ||
+          isAdmin()
+        );
+      }
+    }
+
+    // Saved AI Studio Media & Transcripts
+    match /savedMedia/{mediaId} {
+      allow get: if isVerifiedUser() && isValidId(mediaId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(mediaId) &&
+        isValidSavedMedia(incoming(), mediaId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(mediaId) &&
+        isValidSavedMedia(incoming(), mediaId) &&
+        (existing().ownerId == request.auth.uid || isAdmin()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().mediaId == existing().mediaId &&
+        incoming().createdAt == existing().createdAt &&
+        (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'summaryText'])
+        );
+      allow delete: if isVerifiedUser() && isValidId(mediaId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Registered Fleet Vehicle Devices & Live GPS Telemetry
+    match /vehicleDevices/{deviceId} {
+      allow get: if isVerifiedUser() && isValidId(deviceId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(deviceId) &&
+        isValidVehicleDevice(incoming(), deviceId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(deviceId) &&
+        isValidVehicleDevice(incoming(), deviceId) &&
+        (existing().ownerId == request.auth.uid || isAdmin()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().deviceId == existing().deviceId &&
+        incoming().imei == existing().imei &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          // Action: Profile update
+          incoming().diff(existing()).affectedKeys().hasOnly(['nickname', 'vehicleType', 'status', 'updatedAt']) ||
+          // Action: Live GPS telemetry ping update
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'status',
+            'latitude',
+            'longitude',
+            'speedKmh',
+            'headingDeg',
+            'telemetrySource',
+            'updatedAt'
+          ])
+        );
+      allow delete: if isVerifiedUser() && isValidId(deviceId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Vehicle Odometer & Service Milestone Baselines
+    match /vehicleMaintenance/{maintenanceId} {
+      allow get: if isVerifiedUser() && isValidId(maintenanceId) && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(maintenanceId) &&
+        isValidVehicleMaintenance(incoming(), maintenanceId) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(maintenanceId) &&
+        isValidVehicleMaintenance(incoming(), maintenanceId) &&
+        (existing().ownerId == request.auth.uid || isAdmin()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().maintenanceId == existing().maintenanceId &&
+        incoming().deviceId == existing().deviceId &&
+        incoming().imei == existing().imei &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'odometerKm',
+            'oilChangeLastKm',
+            'airFilterLastKm',
+            'fuelFilterLastKm',
+            'brakeCheckLastKm',
+            'transmissionLastKm',
+            'updatedAt'
+          ])
+        );
+      allow delete: if isVerifiedUser() && isValidId(maintenanceId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}

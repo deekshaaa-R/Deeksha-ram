@@ -1,0 +1,33 @@
+{
+  "_comment": "TODO(PART-E): E-3 Live Tracking layouts are based solely on Google Play listing com.turbotrack.gps text. No reports, geofences, or alerts are invented. Fill screenshot layout slots when supplied.",
+  "status": "ASSUMED",
+  "todoMarker": "TODO(PART-E): Supply com.turbotrack.gps screenshots (SCREEN_1..SCREEN_8) to lock pixel-exact layout.",
+  "sourcePackage": "com.turbotrack.gps",
+  "bottomNavTabs": [
+    { "id": "dashboard", "label": "Dashboard" },
+    { "id": "map", "label": "Map" },
+    { "id": "vehicles", "label": "Vehicles" },
+    { "id": "account", "label": "Account" }
+  ],
+  "allowedVehicleFields": [
+    "pinPointLocation",
+    "latitudeLongitude",
+    "speed",
+    "vehicleState",
+    "currentStatus",
+    "acStatus",
+    "fuelMonitoring",
+    "odometerReading",
+    "batteryVoltage"
+  ],
+  "screens": {
+    "SCREEN_1": { "name": "Login", "layout": "TODO(PART-E)" },
+    "SCREEN_2": { "name": "Live map", "layout": "TODO(PART-E)" },
+    "SCREEN_3": { "name": "Vehicle list", "layout": "TODO(PART-E)" },
+    "SCREEN_4": { "name": "Vehicle details", "layout": "TODO(PART-E)" },
+    "SCREEN_5": { "name": "Dashboard", "layout": "TODO(PART-E)" },
+    "SCREEN_6": { "name": "Account", "layout": "TODO(PART-E)" },
+    "SCREEN_7": { "name": "Reserved", "layout": "TODO(PART-E)" },
+    "SCREEN_8": { "name": "Reserved", "layout": "TODO(PART-E)" }
+  }
+}

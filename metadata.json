@@ -1,0 +1,10 @@
+{
+  "name": "VS Technology — Smart GPS & Fleet Telematics",
+  "description": "Smarter Tracking. Safer Journeys. Enterprise GPS trackers, 4G AI dashcams, fuel monitoring, smart farming GNSS, and white-label fleet platforms.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

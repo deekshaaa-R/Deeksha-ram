@@ -1,0 +1,77 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --color-navy-deep: #0A1128;
+  --color-navy-card: #111B3A;
+  --color-navy-elevated: #162247;
+  --color-cyan-primary: #00D4FF;
+  --color-lime-live: #7CFF6B;
+  --color-amber-alert: #FFB020;
+  --color-red-alert: #FF4D4F;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 30s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-marquee {
+    animation: none;
+  }
+}
+
+.fleet-custom-marker {
+  background: transparent;
+  border: none;
+}
+
+.dark .fleet-leaflet-map .leaflet-tile-pane {
+  filter: brightness(0.76) invert(1) contrast(1.06) hue-rotate(195deg) saturate(0.42);
+}
+
+.fleet-leaflet-map .leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 30px rgba(10, 17, 40, 0.25);
+}
+
+.fleet-leaflet-map .leaflet-popup-content {
+  margin: 12px 14px;
+}
+

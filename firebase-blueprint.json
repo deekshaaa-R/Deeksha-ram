@@ -1,0 +1,495 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Privileged platform administrator grant record.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "UserWorkspace": {
+      "title": "UserWorkspace",
+      "description": "Authenticated user non-PII workspace summary.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII contact record strictly scoped to owner or admin.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "phone": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "Wishlist": {
+      "title": "Wishlist",
+      "description": "Bounded hardware wishlist synced to authenticated user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productIds": {
+          "type": "array",
+          "description": "Up to 50 saved product IDs"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "productIds", "createdAt", "updatedAt"]
+    },
+    "AiSession": {
+      "title": "AiSession",
+      "description": "Multi-turn AI Fleet Copilot conversation thread header.",
+      "type": "object",
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["sessionId", "ownerId", "title", "model", "createdAt", "updatedAt"]
+    },
+    "AiMessage": {
+      "title": "AiMessage",
+      "description": "Single user or assistant turn inside an AI Copilot session.",
+      "type": "object",
+      "properties": {
+        "messageId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sessionId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "maxLength": 16
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 8000
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["messageId", "sessionId", "ownerId", "role", "text", "model", "createdAt"]
+    },
+    "SavedMedia": {
+      "title": "SavedMedia",
+      "description": "Metadata and prompt history for generated/edited fleet visuals.",
+      "type": "object",
+      "properties": {
+        "mediaId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["image", "video", "transcript"],
+          "maxLength": 24
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "prompt": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "summaryText": {
+          "type": "string",
+          "maxLength": 8000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["mediaId", "ownerId", "kind", "title", "prompt", "createdAt"]
+    },
+    "VehicleDevice": {
+      "title": "VehicleDevice",
+      "description": "User-registered GPS tracking vehicle device synced across sessions.",
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "imei": {
+          "type": "string",
+          "minLength": 15,
+          "maxLength": 15,
+          "pattern": "^[0-9]{15}$"
+        },
+        "nickname": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "vehicleType": {
+          "type": "string",
+          "enum": [
+            "Commercial Truck / Fleet",
+            "Cargo Van / LCV",
+            "Passenger Car / SUV",
+            "Two-Wheeler / Scooter",
+            "Bus / Coach",
+            "Refrigerated Van",
+            "Tractor / Harvester"
+          ],
+          "maxLength": 40
+        },
+        "model": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Moving", "Idle", "Alert"],
+          "maxLength": 16
+        },
+        "simExpiry": {
+          "type": "string",
+          "maxLength": 20
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "longitude": {
+          "type": "number"
+        },
+        "speedKmh": {
+          "type": "number"
+        },
+        "headingDeg": {
+          "type": "number"
+        },
+        "telemetrySource": {
+          "type": "string",
+          "enum": ["gps", "simulated", "manual"],
+          "maxLength": 16
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "deviceId",
+        "ownerId",
+        "imei",
+        "nickname",
+        "vehicleType",
+        "model",
+        "status",
+        "simExpiry",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "VehicleMaintenance": {
+      "title": "VehicleMaintenance",
+      "description": "Odometer telemetry and last-serviced milestone baselines per fleet vehicle.",
+      "type": "object",
+      "properties": {
+        "maintenanceId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "deviceId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "imei": {
+          "type": "string",
+          "minLength": 15,
+          "maxLength": 15,
+          "pattern": "^[0-9]{15}$"
+        },
+        "odometerKm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000000
+        },
+        "oilChangeLastKm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000000
+        },
+        "airFilterLastKm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000000
+        },
+        "fuelFilterLastKm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000000
+        },
+        "brakeCheckLastKm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000000
+        },
+        "transmissionLastKm": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2000000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "maintenanceId",
+        "ownerId",
+        "deviceId",
+        "imei",
+        "odometerKm",
+        "oilChangeLastKm",
+        "airFilterLastKm",
+        "fuelFilterLastKm",
+        "brakeCheckLastKm",
+        "transmissionLastKm",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PlatformRoleGrant": {
+      "title": "PlatformRoleGrant",
+      "description": "Database-backed RBAC role assignment mapping a Firebase Auth UID to Super Admin, Admin, Client, or Customer.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 160
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "admin", "client", "customer"],
+          "maxLength": 20
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Active", "Blocked"],
+          "maxLength": 16
+        },
+        "assignedBy": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "adminId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "role", "status", "assignedBy", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Database-backed RBAC admin grant records."
+    },
+    "/platformRoles/{uid}": {
+      "schema": { "$ref": "#/entities/PlatformRoleGrant" },
+      "description": "Authoritative 4-tier RBAC role grant (super_admin, admin, client, customer) keyed by Firebase Auth UID."
+    },
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/UserWorkspace" },
+      "description": "Owner-scoped user workspace profile (non-PII)."
+    },
+    "/users/{uid}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Split collection for owner-only PII (email, phone)."
+    },
+    "/wishlists/{uid}": {
+      "schema": { "$ref": "#/entities/Wishlist" },
+      "description": "Synced hardware wishlist per authenticated user."
+    },
+    "/aiSessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/AiSession" },
+      "description": "AI Fleet Copilot session headers owned by users."
+    },
+    "/aiSessions/{sessionId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/AiMessage" },
+      "description": "Subcollection of chat turns tied to parent AiSession."
+    },
+    "/savedMedia/{mediaId}": {
+      "schema": { "$ref": "#/entities/SavedMedia" },
+      "description": "Saved AI Studio generation prompts & transcripts."
+    },
+    "/vehicleDevices/{deviceId}": {
+      "schema": { "$ref": "#/entities/VehicleDevice" },
+      "description": "Registered fleet vehicle GPS devices linked to authenticated users."
+    },
+    "/vehicleMaintenance/{maintenanceId}": {
+      "schema": { "$ref": "#/entities/VehicleMaintenance" },
+      "description": "Odometer readings and service milestone baselines per vehicle and owner."
+    }
+  }
+}

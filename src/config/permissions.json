@@ -1,0 +1,117 @@
+{
+  "_comment": "TODO(PART-E): E-4 Roles and Permission Matrix are SUGGESTED defaults (not from the real app). Edit ONLY this file to update roles, access, dataScope, or stepUpRequired across guards, LockedChips, dropdowns, and server.",
+  "status": "ASSUMED",
+  "todoMarker": "TODO(PART-E): Replace suggested roles and matrix with confirmed production RBAC table.",
+  "roles": [
+    "Super Admin",
+    "Admin",
+    "Transporter Admin",
+    "Technician",
+    "Viewer"
+  ],
+  "dataScope": {
+    "Super Admin": "all",
+    "Admin": "all",
+    "Transporter Admin": "own_transporter",
+    "Technician": "assigned_installs",
+    "Viewer": "own_transporter"
+  },
+  "matrix": {
+    "step_1": {
+      "label": "Step 1 Add Transporter",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "N",
+        "Technician": "N",
+        "Viewer": "N"
+      },
+      "stepUpRequired": true,
+      "stepUpMode": "always"
+    },
+    "step_2": {
+      "label": "Step 2 Add Device",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "N",
+        "Technician": "Y",
+        "Viewer": "N"
+      },
+      "stepUpRequired": true,
+      "stepUpMode": "always"
+    },
+    "step_3": {
+      "label": "Step 3 Add Vehicle",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "Y",
+        "Technician": "N",
+        "Viewer": "N"
+      },
+      "stepUpRequired": true,
+      "stepUpMode": "window_10m"
+    },
+    "step_4": {
+      "label": "Step 4 Payment Details",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "N",
+        "Technician": "N",
+        "Viewer": "N"
+      },
+      "stepUpRequired": true,
+      "stepUpMode": "always"
+    },
+    "step_5": {
+      "label": "Step 5 Add Vehicle Detail",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "Y",
+        "Technician": "N",
+        "Viewer": "N"
+      },
+      "stepUpRequired": true,
+      "stepUpMode": "window_10m"
+    },
+    "step_6": {
+      "label": "Step 6 Custom Fields",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "Y",
+        "Technician": "N",
+        "Viewer": "N"
+      },
+      "stepUpRequired": true,
+      "stepUpMode": "window_10m"
+    },
+    "live_tracking": {
+      "label": "Live Tracking",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "Y",
+        "Technician": "Y",
+        "Viewer": "View-only"
+      },
+      "stepUpRequired": false,
+      "stepUpMode": "none"
+    },
+    "security_log": {
+      "label": "Security log / sessions",
+      "access": {
+        "Super Admin": "Y",
+        "Admin": "Y",
+        "Transporter Admin": "View-only",
+        "Technician": "N",
+        "Viewer": "N"
+      },
+      "stepUpRequired": false,
+      "stepUpMode": "none"
+    }
+  }
+}

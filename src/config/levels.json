@@ -1,0 +1,31 @@
+{
+  "_comment": "TODO(PART-E): E-1 LEVEL_DEFINITION is currently ASSUMED (L1-L4). Edit this file to add, remove, or rename authentication levels without modifying UI or auth engine code.",
+  "status": "ASSUMED",
+  "todoMarker": "TODO(PART-E): Replace with production LEVEL_DEFINITION if hierarchy differs.",
+  "levels": [
+    {
+      "id": "L1",
+      "name": "App entry (login, second factor, session)",
+      "authMethods": ["password", "totp_or_otp", "biometric_or_pin"],
+      "reauthWindowMinutes": 15
+    },
+    {
+      "id": "L2",
+      "name": "User role (RBAC & row-level data scope)",
+      "authMethods": ["rbac_matrix", "row_scope"],
+      "reauthWindowMinutes": 0
+    },
+    {
+      "id": "L3",
+      "name": "Wizard step (per-step Save signature & step-up)",
+      "authMethods": ["hmac_signature", "idempotency_key", "step_up"],
+      "reauthWindowMinutes": 10
+    },
+    {
+      "id": "L4",
+      "name": "Sensitive action (password change, IMEI import, deactivate, overwrite)",
+      "authMethods": ["biometric", "pin", "otp"],
+      "reauthWindowMinutes": 0
+    }
+  ]
+}
